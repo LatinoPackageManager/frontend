@@ -1,6 +1,6 @@
-# Latino NPM Clone
+# LatinoPM FrontEnd
 
-Un proyecto Next.js para buscar y explorar paquetes NPM.
+Un proyecto Next.js para buscar y explorar paquetes LPM.
 
 ## Getting Started
 
