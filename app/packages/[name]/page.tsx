@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import ReactMarkdown from 'react-markdown'
 import { Navbar } from '@/components/navbar'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -225,29 +226,63 @@ export default function PackagePage() {
                 </TabsList>
 
                 <TabsContent value="readme" className="mt-6">
-                  {/* README */}
                   <div className="mb-8">
                     <h2 className="text-2xl font-bold text-foreground mb-4">Documentación</h2>
                     <div className="prose prose-invert max-w-none">
-                      <div className="bg-card border border-border rounded-lg p-6 text-muted-foreground space-y-4">
+                      <div className="bg-card border border-border rounded-lg p-6">
                         {currentVersion?.readme ? (
-                          currentVersion.readme.split('\n\n').map((paragraph, idx) => (
-                            <div key={idx}>
-                              {paragraph.startsWith('#') ? (
-                                <h3 className="text-xl font-bold text-foreground mt-6 mb-4">
-                                  {paragraph.replace(/#+\s/, '')}
-                                </h3>
-                              ) : paragraph.startsWith('```') ? (
-                                <pre className="bg-background rounded-lg p-4 overflow-x-auto">
-                                  <code className="text-sm font-mono text-foreground">
-                                    {paragraph.replace(/```\w*\n?|\n?```/g, '').trim()}
-                                  </code>
-                                </pre>
-                              ) : (
-                                <p>{paragraph}</p>
-                              )}
-                            </div>
-                          ))
+                          (() => {
+                            const cleanMarkdown = (text: string) => {
+                              let result = text
+                                // Reemplazar escapes de newline y carriage return
+                                .replace(/\\r\\n/g, '\n')
+                                .replace(/\\r/g, '\n')
+                                .replace(/\\n/g, '\n')
+                                .replace(/\\t/g, '  ')
+                                .replace(/\\"/g, '"');
+                              
+                              // Fusionar líneas donde hay solo un marcador de lista
+                              // Patrón: - (newline) (espacios) contenido -> - contenido
+                              result = result.replace(/^([-*+])\s*\n\s+(?=\S)/gm, '$1 ');
+                              
+                              // Reducir múltiples saltos de línea a 2 máximo
+                              result = result.replace(/\n{3,}/g, '\n\n');
+                              
+                              return result;
+                            };
+                            const readme = cleanMarkdown(currentVersion.readme);
+                            return (
+                              <ReactMarkdown
+                                components={{
+                                  h1: ({node, ...props}) => <h1 className="text-3xl font-bold text-foreground mt-6 mb-4" {...props} />,
+                                  h2: ({node, ...props}) => <h2 className="text-2xl font-bold text-foreground mt-5 mb-3" {...props} />,
+                                  h3: ({node, ...props}) => <h3 className="text-xl font-bold text-foreground mt-4 mb-2" {...props} />,
+                                  h4: ({node, ...props}) => <h4 className="text-lg font-bold text-foreground mt-3 mb-2" {...props} />,
+                                  p: ({node, ...props}) => <p className="text-foreground my-2 leading-relaxed" {...props} />,
+                                  code: ({node, inline, ...props}: any) => 
+                                    inline ? (
+                                      <code className="bg-background px-1.5 py-0.5 rounded text-sm font-mono text-foreground" {...props} />
+                                    ) : (
+                                      <code className="text-sm font-mono text-foreground" {...props} />
+                                    ),
+                                  pre: ({node, ...props}) => <pre className="bg-background rounded-lg p-4 overflow-x-auto my-4" {...props} />,
+                                  ul: ({node, ...props}) => <ul className="list-disc list-inside text-foreground my-2 space-y-1" {...props} />,
+                                  ol: ({node, ...props}) => <ol className="list-decimal list-inside text-foreground my-2 space-y-1" {...props} />,
+                                  li: ({node, ...props}) => <li className="text-foreground" {...props} />,
+                                  strong: ({node, ...props}) => <strong className="font-bold text-foreground" {...props} />,
+                                  em: ({node, ...props}) => <em className="italic text-foreground" {...props} />,
+                                  a: ({node, ...props}) => <a className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                                  blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-border pl-4 my-4 text-muted-foreground italic" {...props} />,
+                                  hr: ({node, ...props}) => <hr className="border-border my-6" {...props} />,
+                                  table: ({node, ...props}) => <table className="w-full border-collapse my-4" {...props} />,
+                                  th: ({node, ...props}) => <th className="border border-border px-4 py-2 bg-background font-bold text-foreground" {...props} />,
+                                  td: ({node, ...props}) => <td className="border border-border px-4 py-2 text-foreground" {...props} />,
+                                }}
+                              >
+                                {readme}
+                              </ReactMarkdown>
+                            );
+                          })()
                         ) : (
                           <p className="text-muted-foreground">Sin documentación disponible</p>
                         )}
